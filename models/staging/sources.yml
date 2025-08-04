@@ -1,0 +1,23 @@
+version: 2
+
+sources: # section to define the source database
+  - name: amazon_src_data # name to refer the source system. Multiple source systems can be defined in one file. 
+    database: "{{ 'amazon_data_db_prod' if target.name == 'prod' else 'amazon_data_db' }}" # source database name 
+    schema: "{{ 'amazon_src_data_prod' if target.name == 'prod' else 'amazon_src_data' }}" # source schema name 
+    tables: # section to define tables of amazon_data_db.amazon_src_data
+      - name: amazon_toys # table name 
+        identifier: "{{ 'amazon_toys_prod' if target.name == 'prod' else 'amazon_toys' }}" # table name
+        description: This table contains the raw data about the Toys sold on Amazon for a given period of time #description of the table 
+        loaded_at_field: deliverydate # Timestamp column for freshness check
+        columns: # column level validations
+          - name: transactionid # name of the column 
+            description: Primary key for amazon_toys table  #description of the column
+            tests: # test to be defined to transactionid column 
+              - not_null # transactionid should not be null
+              - unique # transactionid should unique
+          - name: freedays # test to be defined to freedays column
+            tests: # test to be defined to freedays column
+              - accepted_values: # list of values that would be accepted in freedays column  
+                  values: ['30 days FREE. Terms apply.', '60 days FREE. Terms apply.', '90 days FREE. Terms apply.'] # list of accepted values
+                  config: # config what needs to be done while by passing this criteria 
+                    severity: warn # Throw warning when freedays column does not falls within the given list of values 
